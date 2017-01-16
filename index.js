@@ -20,6 +20,9 @@ class Api{
     this._extensions.forEach(ext => ext.splice.apply(ext, args));
     return this;
   }
+  count(){
+    return this._extensions.length ? this._extensions[0].length : 0;
+  }
 }
 
 function main(extensions){

@@ -1,2 +1,84 @@
 # require-extension-hooks
 Add hooks for js extension types
+
+## Installation  
+`npm install require-extension-hooks --save-dev`
+
+## Usage  
+```javascript
+var hooks = require('require-extension-hooks');
+
+hooks('.js').push(function ({content}) {
+  return '/* Before */' + content + '/* After */';
+});
+```
+
+require-extension-hooks intercepts node's module loading system and allows you to queue up multiple *loaders* that can transpile the content before it is compiled.  
+
+The advantage of using require-extension-hooks over something like babel-register is that babel-register is only written for a single purpose, it is difficult to insert further transpilers at the same time. require-extension-hooks allows for as many hooks as you need.  
+
+## API  
+### hook(extension)  
+The main hook function takes an extension string as its only argument. The preceding . is optional. The function can also accept an array of strings, any functions passed to the hook will be applied to all supplied extensions.  
+The function will return a hook object with a number of methods available:  
+
+### hook.push(fn)  
+Pushes a function onto the queue of hooks for this extension.  
+
+### hook.shift(fn)  
+Inserts a function at the start of the queue of hooks for this extension.  
+
+### hook.splice(index, remove, fn1, fn2, ...)  
+Acts like [].splice() for inserting and removing functions.  
+
+### hook.count()  
+Returns the number of hooks queued up for this extension. If hook was called with multiple extensions, it will return the count of the first extension.  
+
+### config  
+A hook function takes a config object as its only argument. This object contains the following options:  
+#### filename  
+  The name of the file being read in.  
+#### content  
+  The content of the file.  
+#### stop  
+  Call this function to stop the queue. The value returned from the current function will be used as the final value. All subsequent hook functions will be skipped.  
+#### cancel  
+  Don't use the return value of this function and continue to the next.  
+#### sourceMap  
+  A pre-initialised source map object. This is an instance of [SourceMapGenerator](https://www.npmjs.com/package/source-map) and be used to create a source map for the current hook.  
+### inputSourceMap  
+  The source map object from any previous transpilations. You don't need to manually merge the input source map into your current source map as this is automatically calculated.  
+
+#### return  
+The hook function *must* return a value. If no value is returned, the next hook is automatically called instead.  
+If the return value is a string, this will be treated as the file contents.  
+If the return value is an object, the filename, content, and sourceMap will be extracted from it.  
+It can also just return the config object directly.  
+
+
+## Source Maps  
+require-extension-hooks contains some helpers for creating source maps for your hooks. Each hook has access to a sourceMap object which can be used to map the previous content to the new content. Each hook does not need to know about the previous one. Once all of the hooks have completed, the source maps are combined and appended to the content as a comment.  
+```javascript
+hooks('vue').push(function ({filename, content, sourceMap}) {
+  // do some transpiling...
+  sourceMap.addMapping({
+    source : filename,
+    original : {
+      line : 1,
+      column : 1
+    },
+    generated : {
+      line : 2,
+      column : 2
+    }
+  });
+});
+
+hooks(['vue', 'js']).push(function ({filename, content, sourceMap}) {
+  // do some more transpiling
+  // create another source map, we don't care whether the previous hook created a source map or not
+  sourceMap.addMapping({ ... });
+});
+
+require('something.vue'); // will contain something like //# sourceMappingURL=datblahblah
+```
