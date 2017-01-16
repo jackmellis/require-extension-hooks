@@ -37,7 +37,7 @@ function hook(hooks, module, filename){
   // Inline the source map in the content
   if (sys.masterMap){
     config.content = convert.removeComments(config.content);
-    config.content = [config.content, convert.fromObject(sys.masterMap).toComment].join('\n');
+    config.content = [config.content, convert.fromObject(sys.masterMap).toComment()].join('\n');
   }
 
   module._compile(config.content, filename);

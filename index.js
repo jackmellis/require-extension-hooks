@@ -4,7 +4,7 @@ const m = require('module');
 const hookFn = require('./hook');
 
 class Api{
-  constructor(extensions){
+  constructor(extensions, options){
     this._extensions = extensions;
   }
   push(fn){
