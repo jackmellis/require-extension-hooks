@@ -34,6 +34,10 @@ Acts like [].splice() for inserting and removing functions.
 ### hook.count()  
 Returns the number of hooks queued up for this extension. If hook was called with multiple extensions, it will return the count of the first extension.  
 
+### hook.plugin(name | fn)  
+Loads a plugin. The plugin can either be a partial name (i.e. for *require-extension-hooks-vue* you can just type `hook.plugin('vue')`), the full name of a plugin (i.e. `hook.plugin('require-extension-hooks-vue')`) or a direct function (i.e. `hook.plugin(function(config){}`).  
+The plugin function does not automatically append the plugin to the hook queue, you also need to tell it what to do. i.e. `hook.plugin('vue').push()`.  
+
 ### config  
 A hook function takes a config object as its only argument. This object contains the following options:  
 #### filename  
