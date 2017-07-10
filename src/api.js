@@ -48,7 +48,7 @@ class Api{
   count(){
     return this._extensions.length ? this._extensions[0].length : 0;
   }
-  plugin(name){
+  plugin(name, options){
     var fn;
     if (typeof name === 'function'){
       fn = name;
@@ -66,6 +66,10 @@ class Api{
 
     if (!fn || typeof fn !== 'function'){
       throw new Error(`Unable to find plugin ${name}`);
+    }
+
+    if (fn.configure && typeof fn.configure === 'function'){
+      fn.configure(options);
     }
 
     this._plugin = fn;
