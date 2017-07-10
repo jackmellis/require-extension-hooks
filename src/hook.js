@@ -1,12 +1,19 @@
 const fs = require('fs');
 const path = require('path');
-
 const {SourceMapGenerator} = require('source-map');
 const convert = require('convert-source-map');
 const merge = require('merge-source-map');
 
+const cache = require('./cache');
+
 function hook(hooks, module, filename){
-  let sys = {filename};
+  const content = fs.readFileSync(filename, 'utf8');
+  const transpiled = transpile(hooks, filename, content);
+  compile(module, transpiled, filename);
+}
+
+function transpile(hooks, filename, content){
+  let sys = {filename, content};
   let config = createConfigObject(sys);
 
   for (let x = 0, l = hooks.length; x < l && !sys.stop; x++){
@@ -17,7 +24,7 @@ function hook(hooks, module, filename){
     if (sys.cancel){
       continue;
     }
-    if (!result){
+    if (!result && typeof result !== 'string'){
       continue;
     }
 
@@ -40,19 +47,24 @@ function hook(hooks, module, filename){
     config.content = [config.content, convert.fromObject(sys.masterMap).toComment()].join('\n');
   }
 
-  module._compile(config.content, filename);
+  return config.content;
+}
+
+function compile(module, content, filename){
+  module._compile(content, filename);
 }
 
 function createConfigObject(sys){
   let config = {
     filename : sys.filename,
-    content : fs.readFileSync(sys.filename, 'utf8'),
+    content : sys.content,
     stop(){
       sys.stop = true;
     },
     cancel(){
       sys.cancel = true;
-    }
+    },
+    hook : oneTimeHook.bind(null, sys)
   };
   Object.defineProperty(config, 'sourceMap', {
     get(){
@@ -72,6 +84,39 @@ function createConfigObject(sys){
     }
   });
   return config;
+}
+
+function oneTimeHook(sys, ext, config){
+  if (ext[0] !== '.'){
+    ext = '.' + ext;
+  }
+  const hooks = cache[ext];
+  if (!hooks){
+    throw new Error(`Unknown file extension ${ext}`);
+  }
+
+  if (typeof config === 'string'){
+    config = {content : config};
+  }
+  if (!config){
+    config = {};
+  }
+  if (config.content === undefined){
+    if (config.filename){
+      try{
+        config.content = fs.readFileSync(config.filename);
+      }catch(err){
+        throw new Error(`Cannot find module '${config.filename}'`);
+      }
+    }else{
+      config.content = sys.content;
+    }
+  }
+  if (!config.filename){
+    config.filename = sys.filename;
+  }
+
+  return transpile(hooks, config.filename, config.content);
 }
 
 function resetSys(sys){

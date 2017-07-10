@@ -1,8 +1,3 @@
-const cache = {};
-const m = require('module');
-
-const hookFn = require('./hook');
-
 class Api{
   constructor(extensions, options){
     this._extensions = extensions;
@@ -14,12 +9,18 @@ class Api{
     this._extensions.forEach(ext => ext.push(fn));
     return this;
   }
-  shift(fn){
+  pop(){
+    this._extensions.forEach(ext => ext.pop());
+  }
+  unshift(fn){
     if (this._plugin && !fn){
       fn = this._plugin;
     }
-    this._extensions.forEach(ext => ext.shift(fn));
+    this._extensions.forEach(ext => ext.unshift(fn));
     return this;
+  }
+  shift(){
+    this._extensions.forEach(ext => ext.shift());
   }
   splice(){
     let args = arguments;
@@ -47,22 +48,4 @@ class Api{
   }
 }
 
-function main(extensions){
-  extensions = [].concat(extensions)
-    .map(function (ext) {
-      if (ext[0] !== '.'){
-        ext = '.' + ext;
-      }
-      let hooks = cache[ext];
-      if (!hooks){
-        hooks = [];
-        cache[ext] = hooks;
-        m._extensions[ext] = hookFn.bind(null, hooks);
-      }
-      return hooks;
-    });
-
-  return (new Api(extensions));
-}
-
-module.exports = main;
+module.exports = Api;

@@ -52,6 +52,22 @@ A hook function takes a config object as its only argument. This object contains
   A pre-initialised source map object. This is an instance of [SourceMapGenerator](https://www.npmjs.com/package/source-map) and be used to create a source map for the current hook.  
 ### inputSourceMap  
   The source map object from any previous transpilations. You don't need to manually merge the input source map into your current source map as this is automatically calculated.  
+#### hook
+  The `hook` method allows you to parse a file's content through another extension and return the transpiled content. This is useful if you have a file that contains multiple languages.
+  ```js
+hooks('.custom', function ({content, hook}) {
+  let {javascriptPart, typescriptPart} = extractStuffFromContent(content);
+  let transpiledTypescriptPart = hook('.ts', typescriptPart);
+  return `${javascriptPart}\n${typescriptPart}`;
+})
+```
+The hook method takes a file extension as its first parameter. The second parameter can be one of the following:
+- `String` - assumed to be the content you want to parse.
+- `{content : String}` - same as passing content directly
+- `{content : String, filename : String}` - passes the content to the hook but with a custom filename
+- `{filename : String}` - pass in a custom filename and it will read in and transpile that file's content.
+
+If you do not pass any parameters into the `hook` method, it will pass in the current content and filename.
 
 #### return  
 The hook function *must* return a value. If no value is returned, the next hook is automatically called instead.  
