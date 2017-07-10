@@ -38,6 +38,24 @@ Returns the number of hooks queued up for this extension. If hook was called wit
 Loads a plugin. The plugin can either be a partial name (i.e. for *require-extension-hooks-vue* you can just type `hook.plugin('vue')`), the full name of a plugin (i.e. `hook.plugin('require-extension-hooks-vue')`) or a direct function (i.e. `hook.plugin(function(config){}`).  
 The plugin is automatically added to the hook queue. You can move it to the start of the queue by calling `hook.plugin('xxx').unshift()`.
 
+### include(pattern | fn)
+Restricts the hook to only run based on the provided pattern. The argument can either a function (that takes the same configuration options as the hook itself), or a **glob** pattern that is matched against the filename.
+```js
+// these 2 examples will both only run for files in the node_modules folder
+hooks('js').include('**/node_modules/**/*.js').push(...);
+hooks('js').include(({filename}) => filename.includes('node_modules'));
+```
+
+### exclude(pattern | fn)
+Restricts the hook to skip files that do not match the provided pattern. The argument can either a function (that takes the same configuration options as the hook itself), or a **glob** pattern that is matched against the filename.
+```js
+// these 2 examples will both EXCLUDE any files from the node_modules folder
+hooks('js').exclude('**/node_modules/**/*.js').push(...);
+hooks('js').exclude(({filename}) => filename.includes('node_modules'));
+```
+
+It is possible to chain multiple include and exclude patterns, the file must match all of the patterns to continue.
+
 ### config  
 A hook function takes a config object as its only argument. This object contains the following options:  
 #### filename  
@@ -55,7 +73,7 @@ A hook function takes a config object as its only argument. This object contains
 #### hook
   The `hook` method allows you to parse a file's content through another extension and return the transpiled content. This is useful if you have a file that contains multiple languages.
   ```js
-hooks('.custom', function ({content, hook}) {
+hooks('.custom').push(function ({content, hook}) {
   let {javascriptPart, typescriptPart} = extractStuffFromContent(content);
   let transpiledTypescriptPart = hook('.ts', typescriptPart);
   return `${javascriptPart}\n${typescriptPart}`;

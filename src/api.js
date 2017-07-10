@@ -1,6 +1,10 @@
+const minimatch = require('minimatch');
+
 class Api{
   constructor(extensions, options){
     this._extensions = extensions;
+    this._plugin = null;
+    this._filter = [];
   }
   push(fn){
     if (this._plugin && !fn){
@@ -8,6 +12,10 @@ class Api{
       this._removePlugin();
     }
     if (fn && typeof fn === 'function'){
+      if (this._filter.length){
+        let fn2 = fn;
+        fn = config => this._filter.every(fn => fn(config)) && fn2(config);
+      }
       this._extensions.forEach(ext => ext.push(fn));
     }
     return this;
@@ -64,6 +72,30 @@ class Api{
     this.push();
     this._plugin = fn;
 
+    return this;
+  }
+  include(pattern){
+    switch (typeof pattern){
+    case 'string':
+      pattern = new minimatch.Minimatch(pattern);
+      this._filter.push(({filename}) => pattern.match(filename));
+      break;
+    case 'function':
+      this._filter.push(pattern);
+      break;
+    }
+    return this;
+  }
+  exclude(pattern){
+    switch (typeof pattern){
+    case 'string':
+      pattern = new minimatch.Minimatch(pattern);
+      this._filter.push(({filename}) => !pattern.match(filename));
+      break;
+    case 'function':
+      this._filter.push(config => !pattern(config));
+      break;
+    }
     return this;
   }
 
