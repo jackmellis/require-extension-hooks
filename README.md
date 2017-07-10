@@ -25,8 +25,14 @@ The function will return a hook object with a number of methods available:
 ### hook.push(fn)  
 Pushes a function onto the queue of hooks for this extension.  
 
-### hook.shift(fn)  
+### hook.unshift(fn)  
 Inserts a function at the start of the queue of hooks for this extension.  
+
+### hook.pop()
+Removes the latest hook from the current extension.
+
+### hook.shift()
+Removes the first hook from the current extension.
 
 ### hook.splice(index, remove, fn1, fn2, ...)  
 Acts like [].splice() for inserting and removing functions.  
@@ -35,11 +41,14 @@ Acts like [].splice() for inserting and removing functions.
 Returns the number of hooks queued up for this extension. If hook was called with multiple extensions, it will return the count of the first extension.  
 
 ### hook.plugin(name | fn)  
-Loads a plugin. The plugin can either be a partial name (i.e. for *require-extension-hooks-vue* you can just type `hook.plugin('vue')`), the full name of a plugin (i.e. `hook.plugin('require-extension-hooks-vue')`) or a direct function (i.e. `hook.plugin(function(config){}`).  
+Loads a plugin.
+
+The plugin can either be a partial name (i.e. for *require-extension-hooks-vue* you can just type `hook.plugin('vue')`), the full name of a plugin (i.e. `hook.plugin('require-extension-hooks-vue')`) or a direct function (i.e. `hook.plugin(function(config){}`).  
+
 The plugin is automatically added to the hook queue. You can move it to the start of the queue by calling `hook.plugin('xxx').unshift()`.
 
 ### include(pattern | fn)
-Restricts the hook to only run based on the provided pattern. The argument can either a function (that takes the same configuration options as the hook itself), or a **glob** pattern that is matched against the filename.
+Restricts the hook to only run based on the provided pattern. The argument can be either a function (that takes the same configuration options as the hook itself), or a **glob** pattern that is matched against the filename.
 ```js
 // these 2 examples will both only run for files in the node_modules folder
 hooks('js').include('**/node_modules/**/*.js').push(...);
@@ -47,7 +56,7 @@ hooks('js').include(({filename}) => filename.includes('node_modules'));
 ```
 
 ### exclude(pattern | fn)
-Restricts the hook to skip files that do not match the provided pattern. The argument can either a function (that takes the same configuration options as the hook itself), or a **glob** pattern that is matched against the filename.
+Restricts the hook to skip files that do not match the provided pattern. The argument can be either a function (that takes the same configuration options as the hook itself), or a **glob** pattern that is matched against the filename.
 ```js
 // these 2 examples will both EXCLUDE any files from the node_modules folder
 hooks('js').exclude('**/node_modules/**/*.js').push(...);
@@ -57,6 +66,11 @@ hooks('js').exclude(({filename}) => filename.includes('node_modules'));
 It is possible to chain multiple include and exclude patterns, the file must match all of the patterns to continue.
 
 ### config  
+```js
+hooks('js').push(function ({filename, content, stop, cancel, sourceMap, hook}) {
+  ...
+})
+```
 A hook function takes a config object as its only argument. This object contains the following options:  
 #### filename  
   The name of the file being read in.  
@@ -74,15 +88,15 @@ A hook function takes a config object as its only argument. This object contains
   The `hook` method allows you to parse a file's content through another extension and return the transpiled content. This is useful if you have a file that contains multiple languages.
   ```js
 hooks('.custom').push(function ({content, hook}) {
-  let {javascriptPart, typescriptPart} = extractStuffFromContent(content);
+  let {javascriptPart, typescriptPart} = extractStuff(content);
   let transpiledTypescriptPart = hook('.ts', typescriptPart);
-  return `${javascriptPart}\n${typescriptPart}`;
+  return `${javascriptPart}\n${transpiledTypescriptPart}`;
 })
 ```
 The hook method takes a file extension as its first parameter. The second parameter can be one of the following:
 - `String` - assumed to be the content you want to parse.
-- `{content : String}` - same as passing content directly
-- `{content : String, filename : String}` - passes the content to the hook but with a custom filename
+- `{content : String}` - same as passing content directly.
+- `{content : String, filename : String}` - passes the content to the hook but with a custom filename.
 - `{filename : String}` - pass in a custom filename and it will read in and transpile that file's content.
 
 If you do not pass any parameters into the `hook` method, it will pass in the current content and filename.
