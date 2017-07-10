@@ -5,8 +5,11 @@ class Api{
   push(fn){
     if (this._plugin && !fn){
       fn = this._plugin;
+      this._removePlugin();
     }
-    this._extensions.forEach(ext => ext.push(fn));
+    if (fn && typeof fn === 'function'){
+      this._extensions.forEach(ext => ext.push(fn));
+    }
     return this;
   }
   pop(){
@@ -15,8 +18,11 @@ class Api{
   unshift(fn){
     if (this._plugin && !fn){
       fn = this._plugin;
+      this._removePlugin();
     }
-    this._extensions.forEach(ext => ext.unshift(fn));
+    if (fn && typeof fn === 'function'){
+      this._extensions.forEach(ext => ext.unshift(fn));
+    }
     return this;
   }
   shift(){
@@ -26,6 +32,7 @@ class Api{
     let args = arguments;
     if (this._plugin && args.length < 3){
       args[2] = this._plugin;
+      this._plugin = null;
     }
     this._extensions.forEach(ext => ext.splice.apply(ext, args));
     return this;
@@ -34,17 +41,41 @@ class Api{
     return this._extensions.length ? this._extensions[0].length : 0;
   }
   plugin(name){
+    var fn;
     if (typeof name === 'function'){
-      this._plugin = name;
+      fn = name;
     }else{
       try{
-        this._plugin = require('require-extension-hooks-' + name);
+        fn = require(`require-extension-hooks-${name}`);
       }catch(e){
-        this._plugin = require(name);
+        try{
+          fn = require(name);
+        }catch(e){
+
+        }
       }
     }
 
+    if (!fn || typeof fn !== 'function'){
+      throw new Error(`Unable to find plugin ${name}`);
+    }
+
+    this._plugin = fn;
+    this.push();
+    this._plugin = fn;
+
     return this;
+  }
+
+  _removePlugin(){
+    this._extensions.forEach(ext => {
+      let index = ext.indexOf(this._plugin);
+      while (index > -1){
+        ext.splice(index, 1);
+        index = ext.indexOf(this._plugin);
+      }
+    });
+    this._plugin = null;
   }
 }
 
