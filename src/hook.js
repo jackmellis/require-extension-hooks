@@ -1,8 +1,12 @@
 const fs = require('fs');
 const path = require('path');
-const {SourceMapGenerator} = require('source-map');
-const convert = require('convert-source-map');
-const merge = require('merge-source-map');
+const requireCache = {};
+function requireIf(path){
+  if (!requireCache[path]){
+    requireCache[path] = require(path);
+  }
+  return requireCache[path];
+}
 
 const cache = require('./cache');
 
@@ -43,6 +47,7 @@ function transpile(hooks, filename, content){
 
   // Inline the source map in the content
   if (sys.masterMap){
+    let convert = requireIf('convert-source-map');
     config.content = convert.removeComments(config.content);
     config.content = [config.content, convert.fromObject(sys.masterMap).toComment()].join('\n');
   }
@@ -69,6 +74,7 @@ function createConfigObject(sys){
   Object.defineProperty(config, 'sourceMap', {
     get(){
       if (!sys.currentMap){
+        const {SourceMapGenerator} = requireIf('source-map');
         sys.currentMap = new SourceMapGenerator({file : sys.filename});
       }
       return sys.currentMap;
@@ -140,13 +146,13 @@ function processResult(config, result, sys){
 function processSourceMap(sys, config){
   if (typeof sys.currentMap === 'string'){
     // sys.currentMap is a json string
-    sys.currentMap = convert.fromJSON(sys.currentMap).toObject();
-  }else if (sys.currentMap instanceof SourceMapGenerator){
+    sys.currentMap = requireIf('convert-source-map').fromJSON(sys.currentMap).toObject();
+  }else if (sys.currentMap instanceof requireIf('source-map').SourceMapGenerator){
     // sys.currentMap was created from SourceMapGenerator and needs converting into an object
-    sys.currentMap = convert.fromJSON(sys.currentMap.toString()).toObject();
+    sys.currentMap = requireIf('convert-source-map').fromJSON(sys.currentMap.toString()).toObject();
   }else if (sys.currentMap === true){
     // true indicates the source map is in the source code
-    sys.currentMap = convert.fromSource(config.content).toObject();
+    sys.currentMap = requireIf('convert-source-map').fromSource(config.content).toObject();
   }else{
     // Already formatted (in theory)
   }
@@ -155,7 +161,7 @@ function processSourceMap(sys, config){
   if (!sys.masterMap){
     sys.masterMap = sys.currentMap;
   }else{
-    sys.masterMap = merge(sys.masterMap, sys.currentMap);
+    sys.masterMap = requireIf('merge-source-map')(sys.masterMap, sys.currentMap);
   }
 }
 
