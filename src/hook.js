@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const mkdirp = require('mkdirp');
 const cache = require('./cache');
-const permacache = require('./permaCache');
+const permaCache = require('./permaCache');
 const cwd = path.resolve('.');
 const requireCache = {};
 function requireIf(path){
@@ -15,7 +15,6 @@ function requireIf(path){
 function hook(hooks, module, filename){
   const useCache = permaCache.enabled && permaCache.match(filename);
   if (useCache){
-    debugger;
     const cached = getCachedFile(filename);
     if (cached !== false){
       compile(module, cached, filename);
@@ -26,7 +25,7 @@ function hook(hooks, module, filename){
   const content = fs.readFileSync(filename, 'utf8');
   const transpiled = transpile(hooks, filename, content);
 
-  if (useCache && content !== transpiled){
+  if (useCache){
     setCachedFile(filename, transpiled);
   }
 
