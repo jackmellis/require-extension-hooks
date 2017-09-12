@@ -2,27 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const mkdirp = require('mkdirp');
 const cache = require('./cache');
+const permacache = require('./permaCache');
+const cwd = path.resolve('.');
 const requireCache = {};
 function requireIf(path){
   if (!requireCache[path]){
     requireCache[path] = require(path);
   }
   return requireCache[path];
-}
-const cwd = path.resolve('.');
-let permaCache;
-try{
-  permaCache = require(path.join(cwd, './.rehrc'));
-  permaCache = Object.assign({
-    enabled: true,
-    match: (filename) => !filename.includes('node_modules'),
-    path: path.join(require('os').tmpdir(), 'reh-cache'),
-    cwd,
-  }, permaCache);
-}catch(e){
-  permaCache = {
-    enabled : false
-  };
 }
 
 function hook(hooks, module, filename){
