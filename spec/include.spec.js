@@ -58,11 +58,10 @@ test('includes a hook based on a string', t => {
 
 test('includes and excludes files', t => {
   var called = 0;
-  var called = 0;
   hooks('js')
     .include('**/files/*clude.js')
-    .push(() => called++)
-    .exclude('**/files/ex*.js');
+    .exclude('**/files/ex*.js')
+    .push(() => called++);
 
   t.is(called, 0);
 

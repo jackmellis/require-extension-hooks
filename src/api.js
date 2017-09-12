@@ -4,7 +4,8 @@ class Api{
   constructor(extensions, options){
     this._extensions = extensions;
     this._plugin = null;
-    this._filter = [];
+    this._include = [];
+    this._exclude = [];
   }
   push(fn){
     if (this._plugin && !fn){
@@ -12,9 +13,13 @@ class Api{
       this._removePlugin();
     }
     if (fn && typeof fn === 'function'){
-      if (this._filter.length){
+      if (this._include.length){
         let fn2 = fn;
-        fn = config => this._filter.every(fn => fn(config)) && fn2(config);
+        fn = config => this._include.some(fn => fn(config)) && fn2(config);
+      }
+      if (this._exclude.length){
+        let fn2 = fn;
+        fn = config => this._exclude.every(fn => !fn(config)) && fn2(config);
       }
       this._extensions.forEach(ext => ext.push(fn));
     }
@@ -82,10 +87,10 @@ class Api{
     switch (typeof pattern){
     case 'string':
       pattern = new minimatch.Minimatch(pattern);
-      this._filter.push(({filename}) => pattern.match(filename));
+      this._include.push(({filename}) => pattern.match(filename));
       break;
     case 'function':
-      this._filter.push(pattern);
+      this._include.push(pattern);
       break;
     }
     return this;
@@ -94,10 +99,10 @@ class Api{
     switch (typeof pattern){
     case 'string':
       pattern = new minimatch.Minimatch(pattern);
-      this._filter.push(({filename}) => !pattern.match(filename));
+      this._exclude.push(({filename}) => pattern.match(filename));
       break;
     case 'function':
-      this._filter.push(config => !pattern(config));
+      this._exclude.push(pattern);
       break;
     }
     return this;

@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const mkdirp = require('mkdirp');
+const cache = require('./cache');
 const requireCache = {};
 function requireIf(path){
   if (!requireCache[path]){
@@ -7,12 +9,40 @@ function requireIf(path){
   }
   return requireCache[path];
 }
-
-const cache = require('./cache');
+const cwd = path.resolve('.');
+let permaCache;
+try{
+  permaCache = require(path.join(cwd, './.rehrc'));
+  permaCache = Object.assign({
+    enabled: true,
+    match: (filename) => !filename.includes('node_modules'),
+    path: path.join(require('os').tmpdir(), 'reh-cache'),
+    cwd,
+  }, permaCache);
+}catch(e){
+  permaCache = {
+    enabled : false
+  };
+}
 
 function hook(hooks, module, filename){
+  const useCache = permaCache.enabled && permaCache.match(filename);
+  if (useCache){
+    debugger;
+    const cached = getCachedFile(filename);
+    if (cached !== false){
+      compile(module, cached, filename);
+      return;
+    }
+  }
+
   const content = fs.readFileSync(filename, 'utf8');
   const transpiled = transpile(hooks, filename, content);
+
+  if (useCache && content !== transpiled){
+    setCachedFile(filename, transpiled);
+  }
+
   compile(module, transpiled, filename);
 }
 
@@ -163,6 +193,35 @@ function processSourceMap(sys, config){
   }else{
     sys.masterMap = requireIf('merge-source-map')(sys.masterMap, sys.currentMap);
   }
+}
+
+function getCachedFilepath(filepath){
+  return path.join(
+    permaCache.path,
+    filepath.replace(permaCache.cwd, ''),
+  );
+}
+
+function getCachedFile(filepath){
+  const tmpFilepath = getCachedFilepath(filepath);
+  let tmpLastUpdated = 0;
+  try{
+    tmpLastUpdated = fs.statSync(tmpFilepath).mtimeMs;
+  }catch(e){
+    return false;
+  }
+  const lastUpdated = fs.statSync(filepath).mtimeMs;
+  if (lastUpdated >= tmpLastUpdated){
+    return false;
+  }
+  return fs.readFileSync(tmpFilepath, 'utf8');
+}
+
+function setCachedFile(filepath, content){
+  const tmpFilepath = getCachedFilepath(filepath);
+  const tmpDirname = path.dirname(tmpFilepath);
+  mkdirp.sync(tmpDirname);
+  fs.writeFileSync(tmpFilepath, content, 'utf8');
 }
 
 module.exports = hook;
