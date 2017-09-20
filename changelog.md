@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.3.1
+- Include should be either-y.
+
 ## 0.3.0
 - Fixed a bug where the plugin option did not pass configuration options [5](https://github.com/jackmellis/require-extension-hooks/issues/5)
 - Added `include` and `exclude` options so you can easily filter out irrelevant files [4](https://github.com/jackmellis/require-extension-hooks/issues/4)
