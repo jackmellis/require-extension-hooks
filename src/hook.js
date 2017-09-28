@@ -184,7 +184,7 @@ function processSourceMap(sys, config){
 function getCachedFilepath(filepath){
   return path.join(
     permaCache.path,
-    filepath.replace(permaCache.cwd, ''),
+    filepath.replace(permaCache.cwd, '')
   );
 }
 
