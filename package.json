@@ -1,6 +1,6 @@
 {
   "name": "require-extension-hooks",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Add hooks for js extension types",
   "main": "src/index.js",
   "scripts": {
@@ -29,5 +29,8 @@
   "devDependencies": {
     "ava": "^0.20.0",
     "inspect-process": "^0.5.0"
+  },
+  "engines": {
+    "node": ">=8.0.0"
   }
 }

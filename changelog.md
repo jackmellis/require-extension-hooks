@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.3.3
+- Added required engine version to package.json
+
 ## 0.3.2
 - Fixed incompatible syntax for use with node v6. [#8](https://github.com/jackmellis/require-extension-hooks/pull/8)
 
