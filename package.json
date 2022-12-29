@@ -27,7 +27,7 @@
     "source-map": "^0.5.6"
   },
   "devDependencies": {
-    "ava": "^0.20.0",
+    "ava": "^5.1.0",
     "inspect-process": "^0.5.0"
   },
   "engines": {
